@@ -1,0 +1,120 @@
+"""
+Enable members of populations to exist and move on an area of land.
+"""
+
+
+import random
+import numpy as np
+
+
+def initial_land(land, pop1, pop2):
+    """
+    Creates land with initial populations spread out randomly.
+    Arguments:
+        land: length of square area (int)
+        pop1: first population (dict)
+        pop2: second population (dict)
+        pop3: third population (dict)
+    Returns:
+        matrix: land with initial populations (matrix)
+    """
+    matrix = np.zeros(shape=(land, land), dtype=int)
+    matrix = populate(matrix, land, pop1)
+    matrix = populate(matrix, land, pop2)
+    return matrix
+
+
+def populate(matrix, land, pop):
+    """
+    Populates matrix randomly with population.
+    Arguments:
+        land: length of square area (int)
+        pop: population (dict)
+    Returns:
+        matrix: land with populations spread randomly (matrix)
+    """
+    for i in range(len(pop)):
+        x = random.randint(0,land-1)
+        y = random.randint(0,land-1)
+        k = list(pop.keys())
+        j = 0
+        while j < 1:
+            if matrix[x,y] != 0:
+                x = random.randint(0, land - 1)
+                y = random.randint(0, land - 1)
+            else:
+                matrix[x,y] = k[i]
+                j = 1
+    return matrix
+
+
+def move(matrix, land, pop1, pop2, pop3):
+    """
+    Creates new matrix in which the members of the populations were able to move around randomly.
+    Arguments:
+        matrix: land with populations spread randomly (matrix)
+        land: length of square area (int)
+        pop1: first population (dict)
+        pop2: second population (dict)
+        pop3: third population (dict)
+    Returns:
+        matrix_4: land with populations spread randomly (matrix)
+    """
+    matrix_1 = np.zeros(shape=(land, land), dtype=int)
+    matrix_2 = move_pop(matrix, matrix_1, land, pop1)
+    matrix_3 = move_pop(matrix, matrix_2, land, pop2)
+    matrix_4 = move_pop(matrix, matrix_3, land, pop3)
+    return matrix_4
+
+
+def move_pop(matrix_1, matrix_2, land, pop):
+    """
+    Enables the members of a population to move up to one space in each direction.
+    Arguments:
+        matrix_1: land with populations spread randomly (matrix)
+        matrix_2: land with populations spread randomly (matrix)
+        land: length of square area (int)
+        pop: population (dict)
+    Returns:
+        matrix_2: land with populations spread randomly (matrix)
+    """
+    for key, value in pop.items():
+        if value != [8, 4, 2]:
+            x, y = np.where(matrix_1 == key)
+            c, d = stepping(x, y, land)
+            j = 0
+            while j < 1:
+                if matrix_2[c, d] != 0:
+                    c, d = stepping(x, y, land)
+                else:
+                    matrix_2[c, d] = key
+                    j = 1
+    return matrix_2
+
+
+def stepping(x, y, land):
+    """
+    Enables members of population to stay on land and randomly move one space in any direction.
+    Arguments:
+        x: current row position (int)
+        y: current column position (int)
+        land: length of square area (int)
+    Returns:
+        c: next row position (int)
+        d: next column position (int)
+    """
+    z = land - 1
+    if x == z:
+        c = x + random.randint(-1, 0)
+    elif x == 0:
+        c = x + random.randint(0, 1)
+    else:
+        c = x + random.randint(-1, 1)
+    if y == z:
+        d = y + random.randint(-1, 0)
+    elif y == 0:
+        d = y + random.randint(0, 1)
+    else:
+        d = y + random.randint(-1, 1)
+    return c,d
+
