@@ -1,0 +1,96 @@
+"""
+Main program that allows assimilation to be modeled until one population takes over.
+"""
+
+
+from landscape import initial_land, move
+from meet import meet
+
+# Get user's parameters for land size and population size.
+land = int(input("The land will be square, enter length between 5 and 10:"))
+pop = int(input("Enter an even initial population size less than the area of the land:"))
+
+## Set initial populations in dictionaries:
+# Member's defining characteristics (dict value): [age, assimilation value, marriage]
+# Marriage is denoted as true or false (1 or 0, respectively).
+
+# Native population-
+natPop = {}
+sizeNatPop = int(pop * .5)
+for i in range(sizeNatPop):
+    natPop[i + 1] = [0, 0, 0]
+
+# Foreign population-
+forPop = {}
+sizeForPop = int(pop * .5)
+for i in range(sizeForPop):
+    forPop[-(i + 1)] = [0, 0, 0]
+
+# Assimilated population-
+asmPop = {}
+sizeAsmPop = 0
+
+# Create the initial land with both initial populations.
+country = initial_land(land, natPop, forPop)
+print("Initial Population Set:")
+print(country)
+
+## Let populations move and interact until one population dominates land.
+# Starts counter.
+k = 0
+while k < 2:
+
+    # Resets counter.
+    k = 0
+
+    # Let members of populations meet.
+    country, natPop, forPop, asmPop, sizeNatPop, sizeForPop, sizeAsmPop = meet(country, land, natPop, forPop, asmPop,
+                                                                               sizeNatPop, sizeForPop, sizeAsmPop)
+    print("Populations married:")
+    print(country)
+
+    # Let members of populations move.
+    country = move(country, land, natPop, forPop, asmPop)
+    print("Populations moved:")
+    print(country)
+
+    # Checks to see if members of native population are still in the country.
+    n = 1
+    for key, value in natPop.items():
+        if value[0] >= 8 or value[1] >= 5 or value[2] == 2:
+            n += 1
+    if n >= len(natPop) + 1:
+        k += 1
+    else:
+        n = 0
+
+    # Checks to see if members of foreign population are still in the country.
+    f = 1
+    for key, value in forPop.items():
+        if value[0] >= 8 or value[1] >= 5 or value[2] == 2:
+            f += 1
+    if f >= len(forPop) + 1:
+        k += 1
+    else:
+        f = 0
+
+    # Checks to see if members of assimilated population are still in the country.
+    a = 1
+    for key, value in asmPop.items():
+        if value[0] >= 8 or value[1] >= 5 or value[2] == 2:
+            a += 1
+    if a >= len(asmPop) + 1:
+        k += 1
+    else:
+        a = 0
+
+# Checks to see which population has members in the country left last.
+if n == 0:
+    print("The population that ended up dominating was the native population.")
+elif f == 0:
+    print("The population that ended up dominating was the foreign population.")
+elif a == 0:
+    print("The population that ended up dominating was the assimilated population.")
+else:
+    print("No population dominated, they all died off.")
+
