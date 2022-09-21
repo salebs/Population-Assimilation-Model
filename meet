@@ -1,0 +1,452 @@
+"""
+Enable the members of the populations to interact with each other.
+"""
+
+
+import random
+import numpy as np
+
+
+def die_check(pop, matrix):
+    """
+    Finds members of population over a certain age and lets them die.
+    Arguments:
+        pop: population (dict)
+        matrix: land with populations (matrix)
+    Returns:
+        pop: population (dict)
+    """
+    lst = []
+    for key, value in pop.items():
+        if value[0] == 7:
+            lst.append(key)
+    for item in lst:
+        x, y = np.where(matrix == item)
+        matrix[x, y] = 0
+        pop[item] = [8, 5, 2]
+    return pop
+
+
+def age_step(pop):
+    """
+    Adds one year to each members' age.
+    Arguments:
+        pop: population (dict)
+    Returns:
+        pop: population (dict)
+    """
+    for key, value in pop.items():
+        pop[key] = [value[0] + 1, value[1], value[2]]
+    return pop
+
+
+def assimilate_step(pop):
+    """
+    Adds one to each members' assimilation value.
+    Arguments:
+        pop: population (dict)
+    Returns:
+        pop: population (dict)
+    """
+    for key, value in pop.items():
+        pop[key] = [value[0], value[1] + 1, value[2]]
+    return pop
+
+
+def assimilate_check(pop, asmPop, matrix):
+    """
+    Makes anyone in first population become assimilated if their assimilation value is a certain value.
+    Arguments:
+        pop: population (dict)
+        asmPop: population of assimilated (dict)
+        matrix: land with populations (matrix)
+    Returns:
+        pop: population (dict)
+        asmPop: population of assimilated (dict)
+    """
+    lst = []
+    for key, value in pop.items():
+        if value [1] == 4:
+            x, y = np.where(matrix == key)
+            if key < 0:
+                asmPop[abs(key) * 211] = value
+                matrix[x,y] = abs(key) * 211
+            elif key > 0:
+                asmPop[key * 223] = value
+                matrix[x, y] = key * 223
+            lst.append(key)
+    for item in lst:
+        pop[item] = [8, 5, 2]
+    return pop, asmPop
+
+
+def assimilate_rand(pop, asmPop, matrix):
+    """
+    Randomly makes anyone in first population become assimilated.
+    Arguments:
+        pop: population (dict)
+        asmPop: population of assimilated (dict)
+        matrix: land with populations (matrix)
+    Returns:
+        pop: population (dict)
+        asmPop: population of assimilated (dict)
+    """
+    lst = []
+    for key, value in pop.items():
+        if value[1] < 4:
+            x, y = np.where(matrix == key)
+            a = random.random() * value[1]
+            if a > 3:
+                if key < 0:
+                    asmPop[abs(key) * 211] = value
+                    matrix[x, y] = abs(key) * 211
+                elif key > 0:
+                    asmPop[key * 223] = value
+                    matrix[x, y] = key * 223
+                lst.append(key)
+    for item in lst:
+        pop[item] = [8, 5, 2]
+    return pop, asmPop
+
+
+def married_check(pop, matrix):
+    """
+    Finds members of population that are married and removes them.
+    Arguments:
+        pop: population (dict)
+        matrix: land with populations (matrix)
+    Returns:
+        pop: population (dict)
+    """
+    lst = []
+    for key, value in pop.items():
+        if value[2] == 1:
+            lst.append(key)
+    for item in lst:
+        x, y = np.where(matrix == item)
+        matrix[x, y] = 0
+        pop[item] = [8, 5, 2]
+    return pop
+
+
+def meet(matrix, land, pop1, pop2, pop3, sizePop1, sizePop2, sizePop3):
+    """
+    Allows members of all populations to meet the other members next to them, possibly marry, and possibly reproduce.
+    Arguments:
+        matrix: land with populations (matrix)
+        land: length of square area (int)
+        pop1: first population (dict)
+        pop2: second population (dict)
+        pop3: third population (dict)
+        sizePop1: size of first population (int)
+        sizePop2: size of second population (int)
+        sizePop3: size of third population (int)
+    Returns:
+        matrix: land with populations (matrix)
+        pop1: first population (dict)
+        pop2: second population (dict)
+        pop3: third population (dict)
+        sizePop1: size of first population (int)
+        sizePop2: size of second population (int)
+        sizePop3: size of third population (int)
+    """
+    for i in range(land):
+        for j in range(land - 1):
+            a = matrix[i, j]
+            b = matrix[i, j + 1]
+            if a != 0 and b != 0:
+                v_a, w_a = pop_check(a, pop1, pop2, pop3)
+                v_b, w_b = pop_check(b, pop1, pop2, pop3)
+                x_a, y_a, z_a = v_a[0], v_a[1], v_a[2]
+                x_b, y_b, z_b = v_b[0], v_b[1], v_b[2]
+                if x_a < 8 or x_b < 8 or y_a < 5 or y_b < 5 or z_a < 2 or z_b < 2:
+                    if w_a == w_b == 1:
+                        matrix, sizePop1 = marry_nat(matrix, i, j, a, b, w_a, w_b, x_a, x_b, (y_a - 2), y_b,
+                                                     land, pop1, pop2, pop3, sizePop1)
+                    elif w_a == w_b == 2:
+                        matrix, sizePop2 = marry_for(matrix, i, j, a, b, w_a, w_b, x_a, x_b, (y_a - 2), y_b,
+                                                     land, pop1, pop2, pop3, sizePop2)
+                    elif w_a == w_b == 3:
+                        matrix, sizePop3 = marry_asm(matrix, i, j, a, b, w_a, w_b, x_a, x_b, y_a, y_b,
+                                                     land, pop1, pop2, pop3, sizePop3)
+                    elif w_a == 1 and w_b == 3:
+                        if y_a < 2:
+                            matrix, sizePop1 = marry_nat(matrix, i, j, a, b,
+                                                     w_a, w_b, x_a, x_b, y_a, y_b, land, pop1, pop2, pop3, sizePop1)
+                        else:
+                            matrix, sizePop3 = marry_asm(matrix, i, j, b, a,
+                                           w_b, w_a, x_b, x_a, y_b, y_a, land, pop1, pop2, pop3, sizePop3)
+                    elif w_a == 3 and w_b == 1:
+                        if y_b < 2:
+                            matrix, sizePop1 = marry_nat(matrix, i, j, b, a,
+                                                     w_b, w_a, x_b, x_a, y_b, y_a, land, pop1, pop2, pop3, sizePop1)
+                        else:
+                            matrix, sizePop3 = marry_asm(matrix, i, j, a, b,
+                                           w_a, w_b, x_a, x_b, y_a, y_b, land, pop1, pop2, pop3, sizePop3)
+                    elif w_a == 2 and w_b == 3:
+                        if y_a < 2:
+                            matrix, sizePop2 = marry_for(matrix, i, j, a, b,
+                                                     w_a, w_b, x_a, x_b, y_a, y_b, land, pop1, pop2, pop3, sizePop2)
+                        else:
+                            matrix, sizePop3 = marry_asm(matrix, i, j, b, a,
+                                           w_b, w_a, x_b, x_a, y_b, y_a, land, pop1, pop2, pop3, sizePop3)
+                    elif w_a == 3 and w_b == 2:
+                        if y_b < 2:
+                            matrix, sizePop2 = marry_nat(matrix, i, j, b, a,
+                                                     w_b, w_a, x_b, x_a, y_b, y_a, land, pop1, pop2, pop3, sizePop2)
+                        else:
+                            matrix, sizePop3 = marry_asm(matrix, i, j, a, b,
+                                           w_a, w_b, x_a, x_b, y_a, y_b, land, pop1, pop2, pop3, sizePop3)
+
+    pop1 = die_check(pop1, matrix)
+    pop2 = die_check(pop2, matrix)
+    pop3 = die_check(pop3, matrix)
+
+    pop1 = married_check(pop1, matrix)
+    pop2 = married_check(pop2, matrix)
+    pop3 = married_check(pop3, matrix)
+
+    pop1 = age_step(pop1)
+    pop2 = age_step(pop2)
+    pop3 = age_step(pop3)
+
+    pop1 = assimilate_step(pop1)
+    pop2 = assimilate_step(pop2)
+
+    pop1, pop3 = assimilate_check(pop1, pop3, matrix)
+    pop2, pop3 = assimilate_check(pop2, pop3, matrix)
+
+    pop1, pop3 = assimilate_rand(pop1, pop3, matrix)
+    pop2, pop3 = assimilate_rand(pop2, pop3, matrix)
+
+    return matrix, pop1, pop2, pop3, sizePop1, sizePop2, sizePop3
+
+
+def pop_check(c, pop1, pop2, pop3):
+    """
+    Determines which population the member is from by their assigned number (key value).
+    Arguments:
+        c: assigned number/ key of member (int)
+        pop1: first population (dict)
+        pop2: second population (dict)
+        pop3: third population (dict)
+    Returns:
+        v: defining characteristics/ value of member (list)
+        w: value which denotes member's population (int)
+    """
+    if 0 < c <= 210:
+        v = pop1.get(c)
+        w = 1
+    elif c < 0:
+        v = pop2.get(c)
+        w = 2
+    elif c > 210:
+        v = pop3.get(c)
+        w = 3
+    else:
+        v = [0, 0, 0]
+        w = 0
+    return v, w
+
+
+def marry_nat(matrix, i, j, a, b, w_a, w_b, x_a, x_b, y_a, y_b, land, pop1, pop2, pop3, sizePop1):
+    """
+    Enables members of any population to marry in favor of the native population.
+    Arguments:
+        matrix: land with populations (matrix)
+        i: row position of first member (int)
+        j: column position of first member (int)
+        a: first member (int)
+        b: second member (int)
+        w_a: value which denotes population of first member (int)
+        w_b: value which denotes population of second member (int)
+        x_a: age of first member (int)
+        x_b: age of second member (int)
+        y_a: assimilation value of first member (int)
+        y_b: assimilation value of second member (int)
+        land: length of square area (int)
+        pop1: first population (dict)
+        pop2: second population (dict)
+        pop3: third population (dict)
+        sizePop1: size of first population (int)
+    Returns:
+        matrix_2: land with populations (matrix)
+        sizePop1: size of population (int)
+    """
+    matrix_1 = np.zeros(shape=(land, land), dtype=int)
+    if w_a == 1:
+        pop1[a] = [x_a, y_a, 1]
+    elif w_a == 2:
+        pop2[a] = [x_a, y_a, 1]
+    else:
+        pop3[a] = [x_a, y_a, 1]
+    if w_b == 1:
+        pop1[b] = [x_a, y_a, 1]
+    elif w_b == 2:
+        pop2[b] = [x_a, y_a, 1]
+    else:
+        pop3[b] = [x_a, y_a, 1]
+    c = int(random.random() * (7 - (x_a + x_b) / 2))
+    k = 0
+    while k < c:
+        k += 1
+        if i < (land - 2):
+            if matrix[i + 1, j] == 0:
+                new_mem = sizePop1 + 1
+                sizePop1 += 1
+                matrix_1[i + 1, j] = new_mem
+                pop1[new_mem] = [0, y_a, 0]
+            elif matrix[i + 1, j + 1] == 0:
+                new_mem = sizePop1 + 1
+                sizePop1 += 1
+                matrix_1[i + 1, j + 1] = new_mem
+                pop1[new_mem] = [0, y_a, 0]
+        else:
+            matrix[i, j] = 0
+            new_mem = sizePop1 + 1
+            sizePop1 += 1
+            matrix_1[i, j] = new_mem
+            pop1[new_mem] = [0, y_a, 0]
+    matrix_2 = np.zeros(shape=(land, land), dtype=int)
+    for m in range(len(matrix)):
+        for n in range(len(matrix)):
+            matrix_2[m, n] = matrix[m, n] + matrix_1[m, n]
+    return matrix_2, sizePop1
+
+
+def marry_for(matrix, i, j, a, b, w_a, w_b, x_a, x_b, y_a, y_b, land, pop1, pop2, pop3, sizePop2):
+    """
+    Enables members of any population to marry in favor of the foreign population.
+    Arguments:
+        matrix: land with populations (matrix)
+        i: row position of first member (int)
+        j: column position of first member (int)
+        a: first member (int)
+        b: second member (int)
+        w_a: value which denotes population of first member (int)
+        w_b: value which denotes population of second member (int)
+        x_a: age of first member (int)
+        x_b: age of second member (int)
+        y_a: assimilation value of first member (int)
+        y_b: assimilation value of second member (int)
+        land: length of square area (int)
+        pop1: first population (dict)
+        pop2: second population (dict)
+        pop3: third population (dict)
+        sizePop1: size of second population (int)
+    Returns:
+        matrix_2: land with populations (matrix)
+        sizePop2: size of second population (int)
+    """
+    matrix_1 = np.zeros(shape=(land, land), dtype=int)
+    if w_a == 1:
+        pop1[a] = [x_a, y_a, 1]
+    elif w_a == 2:
+        pop2[a] = [x_a, y_a, 1]
+    else:
+        pop3[a] = [x_a, y_a, 1]
+    if w_b == 1:
+        pop1[b] = [x_a, y_a, 1]
+    elif w_b == 2:
+        pop2[b] = [x_a, y_a, 1]
+    else:
+        pop3[b] = [x_a, y_a, 1]
+    c = int(random.random() * (7 - (x_a + x_b) / 2))
+    k = 0
+    while k < c:
+        k += 1
+        if i > 0:
+            if matrix[i - 1, j] == 0:
+                new_mem = -(sizePop2 + 1)
+                sizePop2 += 1
+                matrix_1[i - 1, j] = new_mem
+                pop2[new_mem] = [0, y_a, 0]
+            elif matrix[i - 1, j - 1] == 0:
+                new_mem = -(sizePop2 + 1)
+                sizePop2 += 1
+                matrix_1[i - 1, j - 1] = new_mem
+                pop2[new_mem] = [0, y_a, 0]
+        else:
+            matrix[i, j] = 0
+            new_mem = -(sizePop2 + 1)
+            sizePop2 += 1
+            matrix_1[i, j] = new_mem
+            pop2[new_mem] = [0, y_a, 0]
+    matrix_2 = np.zeros(shape=(land, land), dtype=int)
+    for m in range(len(matrix)):
+        for n in range(len(matrix)):
+            matrix_2[m, n] = matrix[m, n] + matrix_1[m, n]
+    return matrix_2, sizePop2
+
+
+def marry_asm(matrix, i, j, a, b, w_a, w_b, x_a, x_b, y_a, y_b, land, pop1, pop2, pop3, sizePop3):
+    """
+    Enables members of any population to marry in favor of the assmilated population.
+    Arguments:
+        matrix: land with populations (matrix)
+        i: row position of first member (int)
+        j: column position of first member (int)
+        a: first member (int)
+        b: second member (int)
+        w_a: value which denotes population of first member (int)
+        w_b: value which denotes population of second member (int)
+        x_a: age of first member (int)
+        x_b: age of second member (int)
+        y_a: assimilation value of first member (int)
+        y_b: assimilation value of second member (int)
+        land: length of square area (int)
+        pop1: first population (dict)
+        pop2: second population (dict)
+        pop3: third population (dict)
+        sizePop3: size of third population (int)
+    Returns:
+        matrix_2: land with populations (matrix)
+        sizePop3: size of third population (int)
+    """
+    matrix_1 = np.zeros(shape=(land, land), dtype=int)
+    if w_a == 1:
+        pop1[a] = [x_a, y_a, 1]
+    elif w_a == 2:
+        pop2[a] = [x_a, y_a, 1]
+    else:
+        pop3[a] = [x_a, y_a, 1]
+    if w_b == 1:
+        pop1[b] = [x_a, y_a, 1]
+    elif w_b == 2:
+        pop2[b] = [x_a, y_a, 1]
+    else:
+        pop3[b] = [x_a, y_a, 1]
+    c = int(random.random() * (7 - (x_a + x_b) / 2))
+    k = 0
+    while k < c:
+        k += 1
+        if j == 0:
+            if matrix[i, j + 2] == 0:
+                new_mem = (sizePop3 + 1) * 227
+                sizePop3 += 1
+                matrix_1[i, j + 2] = new_mem
+                pop3[new_mem] = [0, y_a, 0]
+            else:
+                matrix[i, j] = 0
+                new_mem = (sizePop3 + 1) * 227
+                sizePop3 += 1
+                matrix_1[i, j] = new_mem
+                pop3[new_mem] = [0, y_a, 0]
+        else:
+            if matrix[i, j - 1] == 0:
+                new_mem = (sizePop3 + 1) * 227
+                sizePop3 += 1
+                matrix_1[i, j - 1] = new_mem
+                pop3[new_mem] = [0, y_a, 0]
+            else:
+                matrix[i, j] = 0
+                new_mem = (sizePop3 + 1) * 227
+                sizePop3 += 1
+                matrix_1[i, j] = new_mem
+                pop3[new_mem] = [0, y_a, 0]
+    matrix_2 = np.zeros(shape=(land, land), dtype=int)
+    for m in range(len(matrix)):
+        for n in range(len(matrix)):
+            matrix_2[m, n] = matrix[m, n] + matrix_1[m, n]
+    return matrix_2, sizePop3
+
